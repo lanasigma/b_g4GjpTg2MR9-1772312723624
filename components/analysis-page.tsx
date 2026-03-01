@@ -84,65 +84,82 @@ function InlineMd({ text }: { text: string }) {
   )
 }
 
+type MdBlock =
+  | { type: "h1"; text: string }
+  | { type: "h2"; text: string }
+  | { type: "ul"; items: string[] }
+  | { type: "ol"; items: string[] }
+  | { type: "p"; lines: string[] }
+
+function parseMdBlocks(text: string): MdBlock[] {
+  const blocks: MdBlock[] = []
+  let cur: MdBlock | null = null
+
+  const flush = () => { if (cur) { blocks.push(cur); cur = null } }
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trimEnd()
+
+    // blank line: close a paragraph but let lists continue
+    if (!line) {
+      if (cur?.type === "p") flush()
+      continue
+    }
+
+    if (/^# /.test(line)) { flush(); blocks.push({ type: "h1", text: line.slice(2) }); continue }
+    if (/^## /.test(line)) { flush(); blocks.push({ type: "h2", text: line.slice(3) }); continue }
+
+    if (/^[-•*] /.test(line.trimStart())) {
+      if (cur?.type !== "ul") { flush(); cur = { type: "ul", items: [] } }
+      ;(cur as { type: "ul"; items: string[] }).items.push(line.replace(/^\s*[-•*] /, ""))
+      continue
+    }
+    if (/^\d+\. /.test(line.trimStart())) {
+      if (cur?.type !== "ol") { flush(); cur = { type: "ol", items: [] } }
+      ;(cur as { type: "ol"; items: string[] }).items.push(line.replace(/^\s*\d+\. /, ""))
+      continue
+    }
+
+    // plain text
+    if (cur?.type !== "p") { flush(); cur = { type: "p", lines: [] } }
+    ;(cur as { type: "p"; lines: string[] }).lines.push(line)
+  }
+  flush()
+  return blocks
+}
+
 function SimpleMarkdown({ text, className }: { text: string; className?: string }) {
-  const paragraphs = text.split(/\n\n+/)
+  const blocks = parseMdBlocks(text)
   return (
     <div className={className}>
-      {paragraphs.map((para, pi) => {
-        const lines = para.split("\n").filter(Boolean)
-        // H1 — section heading
-        if (para.startsWith("# "))
+      {blocks.map((block, i) => {
+        if (block.type === "h1")
           return (
-            <h2 key={pi} className="text-sm font-bold uppercase tracking-wide text-primary border-b border-primary/20 pb-1 mt-6 mb-2">
-              {para.slice(2)}
+            <h2 key={i} className="text-sm font-bold text-primary border-b border-primary/20 pb-1 mt-6 mb-2">
+              {block.text}
             </h2>
           )
-        // H2 — sub-heading
-        if (para.startsWith("## "))
-          return <h3 key={pi} className="text-sm font-semibold text-foreground mt-4 mb-1">{para.slice(3)}</h3>
-        // Bullet list
-        if (lines.length >= 1 && lines.every((l) => /^[-•*]\s/.test(l.trim()))) {
+        if (block.type === "h2")
+          return <h3 key={i} className="text-sm font-semibold text-foreground mt-4 mb-1">{block.text}</h3>
+        if (block.type === "ul")
           return (
-            <ul key={pi} className="list-disc pl-5 space-y-1.5 mb-3">
-              {lines.map((l, li) => (
-                <li key={li} className="text-sm leading-relaxed">
-                  <InlineMd text={l.replace(/^[-•*]\s/, "")} />
-                </li>
+            <ul key={i} className="list-disc pl-5 space-y-1.5 mb-3">
+              {block.items.map((item, j) => (
+                <li key={j} className="text-sm leading-relaxed"><InlineMd text={item} /></li>
               ))}
             </ul>
           )
-        }
-        // Numbered list
-        if (lines.length > 1 && lines.every((l) => /^\d+\.\s/.test(l.trim()))) {
+        if (block.type === "ol")
           return (
-            <ol key={pi} className="list-decimal pl-5 space-y-1.5 mb-3">
-              {lines.map((l, li) => (
-                <li key={li} className="text-sm leading-relaxed">
-                  <InlineMd text={l.replace(/^\d+\.\s/, "")} />
-                </li>
+            <ol key={i} className="list-decimal pl-5 space-y-1.5 mb-3">
+              {block.items.map((item, j) => (
+                <li key={j} className="text-sm leading-relaxed"><InlineMd text={item} /></li>
               ))}
             </ol>
           )
-        }
-        // Mixed block — render line by line
-        if (lines.some((l) => /^[-•*]\s/.test(l.trim()))) {
-          return (
-            <div key={pi} className="mb-3">
-              {lines.map((l, li) =>
-                /^[-•*]\s/.test(l.trim()) ? (
-                  <ul key={li} className="list-disc pl-5">
-                    <li className="text-sm leading-relaxed"><InlineMd text={l.replace(/^[-•*]\s/, "")} /></li>
-                  </ul>
-                ) : (
-                  <p key={li} className="text-sm leading-relaxed"><InlineMd text={l} /></p>
-                )
-              )}
-            </div>
-          )
-        }
         return (
-          <p key={pi} className="text-sm leading-relaxed mb-3">
-            <InlineMd text={lines.join(" ")} />
+          <p key={i} className="text-sm leading-relaxed mb-3">
+            <InlineMd text={(block as { type: "p"; lines: string[] }).lines.join(" ")} />
           </p>
         )
       })}
@@ -152,50 +169,20 @@ function SimpleMarkdown({ text, className }: { text: string; className?: string 
 
 // ─── PDF download for investment memo ────────────────────────────────────────
 function memoToHtml(memo: string): string {
-  return memo
-    .split(/\n\n+/)
+  const blocks = parseMdBlocks(memo)
+  return blocks
     .map((block) => {
-      // H1 section headers
-      if (block.startsWith("# ")) {
-        return `<h2>${escHtml(block.slice(2).trim())}</h2>`
+      if (block.type === "h1") return `<h2>${escHtml(block.text)}</h2>`
+      if (block.type === "h2") return `<h3>${escHtml(block.text)}</h3>`
+      if (block.type === "ul") {
+        const items = block.items.map((item) => `<li>${inlineHtml(item)}</li>`).join("")
+        return `<ul>${items}</ul>`
       }
-      // H2 sub-headers (e.g. "Deal at a Glance")
-      if (block.startsWith("## ")) {
-        return `<h3>${escHtml(block.slice(3).trim())}</h3>`
+      if (block.type === "ol") {
+        const items = block.items.map((item) => `<li>${inlineHtml(item)}</li>`).join("")
+        return `<ol>${items}</ol>`
       }
-      // Bullet lists
-      const lines = block.split("\n").filter(Boolean)
-      if (lines.length > 1 && lines.every((l) => /^[-•*]\s/.test(l.trim()))) {
-        const items = lines.map((l) => {
-          const content = inlineHtml(l.replace(/^[-•*]\s/, ""))
-          return `<li>${content}</li>`
-        })
-        return `<ul>${items.join("")}</ul>`
-      }
-      // Single bullet (common in "Deal at a Glance" subsection)
-      if (lines.length === 1 && /^[-•*]\s/.test(lines[0].trim())) {
-        return `<ul><li>${inlineHtml(lines[0].replace(/^[-•*]\s/, ""))}</li></ul>`
-      }
-      // Numbered lists
-      if (lines.length > 1 && lines.every((l) => /^\d+\.\s/.test(l.trim()))) {
-        const items = lines.map((l) => {
-          const content = inlineHtml(l.replace(/^\d+\.\s/, ""))
-          return `<li>${content}</li>`
-        })
-        return `<ol>${items.join("")}</ol>`
-      }
-      // Mixed block: some lines are bullets — treat each line separately
-      if (lines.some((l) => /^[-•*]\s/.test(l.trim()))) {
-        return lines
-          .map((l) =>
-            /^[-•*]\s/.test(l.trim())
-              ? `<ul><li>${inlineHtml(l.replace(/^[-•*]\s/, ""))}</li></ul>`
-              : `<p>${inlineHtml(l)}</p>`
-          )
-          .join("")
-      }
-      // Normal paragraph (join line breaks within the block)
-      return `<p>${inlineHtml(lines.join(" "))}</p>`
+      return `<p>${inlineHtml((block as { type: "p"; lines: string[] }).lines.join(" "))}</p>`
     })
     .join("\n")
 }
