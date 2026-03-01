@@ -55,10 +55,15 @@ export async function POST(request: NextRequest) {
           systemInstruction: systemPrompt,
         })
 
-        const history = messages.slice(0, -1).map((m) => ({
+        // Gemini requires chat history to start with a "user" turn.
+        // The UI prepends a welcome assistant message, so we strip any
+        // leading "model" turns before passing history to startChat.
+        const rawHistory = messages.slice(0, -1).map((m) => ({
           role: m.role === "assistant" ? "model" : "user",
           parts: [{ text: m.content }],
         }))
+        const firstUserIdx = rawHistory.findIndex((m) => m.role === "user")
+        const history = firstUserIdx >= 0 ? rawHistory.slice(firstUserIdx) : []
         const chat = model.startChat({ history })
         const result = await chat.sendMessageStream(
           messages[messages.length - 1].content

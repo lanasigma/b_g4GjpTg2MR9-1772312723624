@@ -35,11 +35,15 @@ export async function POST(request: NextRequest) {
     systemInstruction: systemPrompt,
   })
 
-  // Convert chat history (all but the last user message) to Gemini format
-  const history = messages.slice(0, -1).map((m) => ({
+  // Convert chat history (all but the last user message) to Gemini format.
+  // Gemini requires history to start with a "user" turn, so strip any leading
+  // "model" turns (e.g., the UI welcome message).
+  const rawHistory = messages.slice(0, -1).map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }],
   }))
+  const firstUserIdx = rawHistory.findIndex((m) => m.role === "user")
+  const history = firstUserIdx >= 0 ? rawHistory.slice(firstUserIdx) : []
   const chat = model.startChat({ history })
   const result = await chat.sendMessage(messages[messages.length - 1].content)
   const assistantContent = result.response.text()

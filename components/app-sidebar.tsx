@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useApp } from "@/lib/app-context"
 
-// ── investAble.ai logo mark (inline SVG — no file dependency) ──────────────
+// ── investAble.ai logo mark — matches the .iA brand icon ──────────────────
 function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -24,19 +24,21 @@ function LogoMark({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <rect width="40" height="40" rx="9" fill="#E8521A" />
+      <rect width="40" height="40" rx="8" fill="#E05520" />
+      {/* period dot */}
+      <rect x="5" y="10" width="3.5" height="3.5" rx="0.5" fill="white" />
       {/* underscore */}
-      <rect x="7" y="29" width="11" height="2.5" rx="1" fill="white" />
-      {/* i stem */}
-      <rect x="9.5" y="17" width="3" height="11" rx="1" fill="white" />
+      <rect x="5" y="30" width="12" height="2.8" rx="1" fill="white" />
       {/* i dot */}
-      <rect x="9.5" y="13" width="3" height="2.5" rx="1" fill="white" />
+      <rect x="7.5" y="15" width="3" height="3" rx="0.5" fill="white" />
+      {/* i stem */}
+      <rect x="7.5" y="20" width="3" height="10" rx="1" fill="white" />
       {/* A left leg */}
-      <polygon points="21,11 25.5,30 23.5,30 20,14" fill="white" />
+      <polygon points="20,10 26,30 23.5,30 19,13" fill="white" />
       {/* A right leg */}
-      <polygon points="33,11 28.5,30 30.5,30 34,14" fill="white" />
+      <polygon points="35,10 29,30 31.5,30 36,13" fill="white" />
       {/* A crossbar */}
-      <rect x="22.5" y="22" width="10" height="2.5" rx="1" fill="white" />
+      <rect x="22" y="22" width="11.5" height="2.8" rx="1" fill="white" />
     </svg>
   )
 }

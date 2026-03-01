@@ -2,12 +2,26 @@
 
 import { useState, useRef, useEffect } from "react"
 import {
-  Sparkles,
   Send,
   PanelRightClose,
   PanelRightOpen,
   ChevronRight,
 } from "lucide-react"
+
+function BrandMark() {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+      <rect width="40" height="40" rx="8" fill="#E05520" />
+      <rect x="5" y="10" width="3.5" height="3.5" rx="0.5" fill="white" />
+      <rect x="5" y="30" width="12" height="2.8" rx="1" fill="white" />
+      <rect x="7.5" y="15" width="3" height="3" rx="0.5" fill="white" />
+      <rect x="7.5" y="20" width="3" height="10" rx="1" fill="white" />
+      <polygon points="20,10 26,30 23.5,30 19,13" fill="white" />
+      <polygon points="35,10 29,30 31.5,30 36,13" fill="white" />
+      <rect x="22" y="22" width="11.5" height="2.8" rx="1" fill="white" />
+    </svg>
+  )
+}
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -159,8 +173,8 @@ export function CopilotPanel() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+          <div className="h-7 w-7">
+            <BrandMark />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-card-foreground">
