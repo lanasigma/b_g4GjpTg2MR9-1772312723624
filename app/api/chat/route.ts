@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const systemPrompt = await buildSystemPrompt(analysisId ?? null)
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-latest",
     systemInstruction: systemPrompt,
   })
 

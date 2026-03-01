@@ -190,7 +190,7 @@ async function runLLMAnalysis(input: AnalysisInput): Promise<AnalysisResultJson>
   const prompt = buildAnalysisPrompt(input)
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-latest",
     systemInstruction: `You are a senior venture capital analyst. You produce structured investment analysis in strict JSON format.
 Return ONLY a single valid JSON object — no markdown fences, no prose, no trailing commas.`,
   })
