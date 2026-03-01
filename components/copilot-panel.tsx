@@ -9,18 +9,8 @@ import {
 } from "lucide-react"
 
 function BrandMark() {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      <rect width="40" height="40" rx="8" fill="#E05520" />
-      <rect x="5" y="10" width="3.5" height="3.5" rx="0.5" fill="white" />
-      <rect x="5" y="30" width="12" height="2.8" rx="1" fill="white" />
-      <rect x="7.5" y="15" width="3" height="3" rx="0.5" fill="white" />
-      <rect x="7.5" y="20" width="3" height="10" rx="1" fill="white" />
-      <polygon points="20,10 26,30 23.5,30 19,13" fill="white" />
-      <polygon points="35,10 29,30 31.5,30 36,13" fill="white" />
-      <rect x="22" y="22" width="11.5" height="2.8" rx="1" fill="white" />
-    </svg>
-  )
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/investable-logo.png" alt="investAble.ai" className="h-full w-full object-contain" />
 }
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
