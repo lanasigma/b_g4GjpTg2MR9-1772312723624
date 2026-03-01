@@ -1,8 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 import { inngest } from "@/inngest/client"
 import prisma from "@/lib/prisma"
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // ─── Step label constants (must match UI's analysisSteps array) ───────────────
 const STEPS = {
@@ -176,15 +176,14 @@ interface AnalysisInput {
 async function runLLMAnalysis(input: AnalysisInput): Promise<AnalysisResultJson> {
   const prompt = buildAnalysisPrompt(input)
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 8192,
-    system: `You are a senior venture capital analyst. You produce structured investment analysis in strict JSON format.
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    systemInstruction: `You are a senior venture capital analyst. You produce structured investment analysis in strict JSON format.
 Return ONLY a single valid JSON object — no markdown fences, no prose, no trailing commas.`,
-    messages: [{ role: "user", content: prompt }],
   })
 
-  const raw = response.content[0]?.type === "text" ? response.content[0].text : "{}"
+  const result = await model.generateContent(prompt)
+  const raw = result.response.text()
 
   // Extract the first JSON object from the response
   const jsonMatch = raw.match(/\{[\s\S]*\}/)

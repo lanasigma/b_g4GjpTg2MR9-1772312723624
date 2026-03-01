@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 import { buildSystemPrompt, persistMessages, type ChatMessage } from "@/lib/chat-helpers"
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // ─── POST /api/chat ───────────────────────────────────────────────────────────
 /**
@@ -30,15 +30,19 @@ export async function POST(request: NextRequest) {
 
   const systemPrompt = await buildSystemPrompt(analysisId ?? null)
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    systemInstruction: systemPrompt,
   })
 
-  const assistantContent =
-    response.content[0]?.type === "text" ? response.content[0].text : ""
+  // Convert chat history (all but the last user message) to Gemini format
+  const history = messages.slice(0, -1).map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }))
+  const chat = model.startChat({ history })
+  const result = await chat.sendMessage(messages[messages.length - 1].content)
+  const assistantContent = result.response.text()
 
   const assistantMessage: ChatMessage = { role: "assistant", content: assistantContent }
 

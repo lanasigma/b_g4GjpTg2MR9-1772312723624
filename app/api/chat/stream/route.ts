@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 import { buildSystemPrompt, persistMessages, type ChatMessage } from "@/lib/chat-helpers"
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // ─── POST /api/chat/stream ────────────────────────────────────────────────────
 /**
@@ -49,20 +49,24 @@ export async function POST(request: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        // Use Anthropic streaming
-        const stream = client.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        // Use Gemini streaming
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash-lite",
+          systemInstruction: systemPrompt,
         })
 
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            const delta = event.delta.text
+        const history = messages.slice(0, -1).map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }))
+        const chat = model.startChat({ history })
+        const result = await chat.sendMessageStream(
+          messages[messages.length - 1].content
+        )
+
+        for await (const chunk of result.stream) {
+          const delta = chunk.text()
+          if (delta) {
             fullAssistantText += delta
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ delta, done: false })}\n\n`)
