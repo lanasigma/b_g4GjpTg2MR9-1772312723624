@@ -11,8 +11,17 @@ import {
   Cell,
 } from "recharts"
 
-const data = [
-  { name: "FlowAI", x: 35, y: 90, z: 400 },
+export interface MarketPositionPoint {
+  name: string
+  x: number
+  y: number
+  z: number
+  isSubject?: boolean
+}
+
+// Fallback data used only when no API data is passed (e.g. Storybook / static preview)
+const DEFAULT_DATA: MarketPositionPoint[] = [
+  { name: "FlowAI", x: 35, y: 90, z: 400, isSubject: true },
   { name: "Zapier", x: 80, y: 45, z: 350 },
   { name: "Make", x: 55, y: 65, z: 300 },
   { name: "UiPath", x: 90, y: 55, z: 350 },
@@ -48,7 +57,11 @@ function CustomTooltipContent({
   return null
 }
 
-export function MarketPositionChart() {
+export function MarketPositionChart({
+  data = DEFAULT_DATA,
+}: {
+  data?: MarketPositionPoint[]
+}) {
   return (
     <div className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -91,9 +104,9 @@ export function MarketPositionChart() {
               <Cell
                 key={entry.name}
                 fill={colors[index % colors.length]}
-                r={index === 0 ? 12 : 8}
-                stroke={index === 0 ? "var(--color-primary)" : "transparent"}
-                strokeWidth={index === 0 ? 3 : 0}
+                r={entry.isSubject ? 12 : 8}
+                stroke={entry.isSubject ? "var(--color-primary)" : "transparent"}
+                strokeWidth={entry.isSubject ? 3 : 0}
               />
             ))}
           </Scatter>

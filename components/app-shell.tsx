@@ -6,7 +6,11 @@ import { DashboardPage } from "@/components/dashboard-page"
 import { UploadPage } from "@/components/upload-page"
 import { AnalysisPage } from "@/components/analysis-page"
 import { DealIntelligencePage } from "@/components/deal-intelligence-page"
-import { PlaceholderPage } from "@/components/placeholder-page"
+import { DealFlowPage } from "@/components/deal-flow-page"
+import { RiskSignalsPage } from "@/components/risk-signals-page"
+import { ReportsPage } from "@/components/reports-page"
+import { SavedPage } from "@/components/saved-page"
+import { SettingsPage } from "@/components/settings-page"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useApp } from "@/lib/app-context"
 
@@ -23,16 +27,16 @@ export function AppShell() {
         return <AnalysisPage />
       case "deal-intelligence":
         return <DealIntelligencePage />
-      case "risk-signals":
-        return <PlaceholderPage title="Risk Signals" description="Centralized view of flagged risks across your entire portfolio pipeline." />
       case "deal-flow":
-        return <PlaceholderPage title="Deal Flow" description="Track and manage your investment pipeline." />
+        return <DealFlowPage />
+      case "risk-signals":
+        return <RiskSignalsPage />
       case "reports":
-        return <PlaceholderPage title="Reports" description="View and generate detailed reports." />
+        return <ReportsPage />
       case "saved":
-        return <PlaceholderPage title="Saved Analyses" description="Access your bookmarked startup analyses." />
+        return <SavedPage />
       case "settings":
-        return <PlaceholderPage title="Settings" description="Manage your workspace preferences." />
+        return <SettingsPage />
       default:
         return <DashboardPage />
     }

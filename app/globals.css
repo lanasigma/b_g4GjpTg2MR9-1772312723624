@@ -4,82 +4,101 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.975 0.002 250);
-  --foreground: oklch(0.13 0.02 260);
+  /* ── Backgrounds ─────────────────────────────────────── */
+  --background: oklch(0.983 0.005 45);
+  --foreground: oklch(0.112 0.020 45);
+
+  /* ── Cards / Popover ─────────────────────────────────── */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.02 260);
+  --card-foreground: oklch(0.112 0.020 45);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.02 260);
-  --primary: oklch(0.588 0.158 258);
+  --popover-foreground: oklch(0.112 0.020 45);
+
+  /* ── Brand — investAble.ai orange (matches logo) ─────── */
+  --primary: oklch(0.638 0.213 38.5);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.955 0.01 250);
-  --secondary-foreground: oklch(0.25 0.02 260);
-  --muted: oklch(0.955 0.01 250);
-  --muted-foreground: oklch(0.50 0.02 260);
-  --accent: oklch(0.588 0.158 258);
+
+  /* ── Neutrals ────────────────────────────────────────── */
+  --secondary: oklch(0.958 0.010 45);
+  --secondary-foreground: oklch(0.250 0.020 45);
+  --muted: oklch(0.958 0.008 45);
+  --muted-foreground: oklch(0.495 0.020 45);
+  --accent: oklch(0.638 0.213 38.5);
   --accent-foreground: oklch(1 0 0);
+
+  /* ── Semantic ─────────────────────────────────────────── */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.905 0.01 250);
-  --input: oklch(0.905 0.01 250);
-  --ring: oklch(0.588 0.158 258);
-  --chart-1: oklch(0.588 0.158 258);
-  --chart-2: oklch(0.65 0.17 165);
-  --chart-3: oklch(0.55 0.10 280);
-  --chart-4: oklch(0.75 0.12 80);
-  --chart-5: oklch(0.60 0.20 30);
+  --border: oklch(0.902 0.012 45);
+  --input: oklch(0.902 0.012 45);
+  --ring: oklch(0.638 0.213 38.5);
+
+  /* ── Charts ──────────────────────────────────────────── */
+  --chart-1: oklch(0.638 0.213 38.5);
+  --chart-2: oklch(0.650 0.170 165);
+  --chart-3: oklch(0.550 0.100 280);
+  --chart-4: oklch(0.750 0.120 80);
+  --chart-5: oklch(0.600 0.200 30);
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.003 250);
-  --sidebar-foreground: oklch(0.13 0.02 260);
-  --sidebar-primary: oklch(0.588 0.158 258);
+
+  /* ── Sidebar — rich dark charcoal in both modes ─────── */
+  --sidebar: oklch(0.148 0.018 38);
+  --sidebar-foreground: oklch(0.920 0.010 38);
+  --sidebar-primary: oklch(0.638 0.213 38.5);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.015 258);
-  --sidebar-accent-foreground: oklch(0.25 0.02 260);
-  --sidebar-border: oklch(0.905 0.01 250);
-  --sidebar-ring: oklch(0.588 0.158 258);
-  --success: oklch(0.65 0.17 155);
+  --sidebar-accent: oklch(0.215 0.020 38);
+  --sidebar-accent-foreground: oklch(0.920 0.010 38);
+  --sidebar-border: oklch(0.235 0.020 38);
+  --sidebar-ring: oklch(0.638 0.213 38.5);
+
+  /* ── Status ──────────────────────────────────────────── */
+  --success: oklch(0.650 0.170 155);
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.80 0.15 80);
-  --warning-foreground: oklch(0.25 0.05 80);
+  --warning: oklch(0.800 0.150 80);
+  --warning-foreground: oklch(0.250 0.050 80);
 }
 
 .dark {
-  --background: oklch(0.13 0.015 260);
-  --foreground: oklch(0.95 0.01 250);
-  --card: oklch(0.17 0.015 260);
-  --card-foreground: oklch(0.95 0.01 250);
-  --popover: oklch(0.17 0.015 260);
-  --popover-foreground: oklch(0.95 0.01 250);
-  --primary: oklch(0.62 0.17 258);
+  --background: oklch(0.122 0.015 38);
+  --foreground: oklch(0.950 0.008 38);
+  --card: oklch(0.162 0.015 38);
+  --card-foreground: oklch(0.950 0.008 38);
+  --popover: oklch(0.162 0.015 38);
+  --popover-foreground: oklch(0.950 0.008 38);
+  --primary: oklch(0.672 0.200 38.5);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.22 0.015 260);
-  --secondary-foreground: oklch(0.90 0.01 250);
-  --muted: oklch(0.22 0.015 260);
-  --muted-foreground: oklch(0.60 0.02 260);
-  --accent: oklch(0.62 0.17 258);
+  --secondary: oklch(0.208 0.015 38);
+  --secondary-foreground: oklch(0.900 0.008 38);
+  --muted: oklch(0.208 0.015 38);
+  --muted-foreground: oklch(0.600 0.015 38);
+  --accent: oklch(0.672 0.200 38.5);
   --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.50 0.20 27);
+  --destructive: oklch(0.500 0.200 27);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.25 0.015 260);
-  --input: oklch(0.25 0.015 260);
-  --ring: oklch(0.62 0.17 258);
-  --chart-1: oklch(0.62 0.17 258);
-  --chart-2: oklch(0.65 0.17 165);
-  --chart-3: oklch(0.55 0.10 280);
-  --chart-4: oklch(0.75 0.12 80);
-  --chart-5: oklch(0.60 0.20 30);
-  --sidebar: oklch(0.15 0.015 260);
-  --sidebar-foreground: oklch(0.95 0.01 250);
-  --sidebar-primary: oklch(0.62 0.17 258);
+  --border: oklch(0.240 0.015 38);
+  --input: oklch(0.240 0.015 38);
+  --ring: oklch(0.672 0.200 38.5);
+  --chart-1: oklch(0.672 0.200 38.5);
+  --chart-2: oklch(0.650 0.170 165);
+  --chart-3: oklch(0.550 0.100 280);
+  --chart-4: oklch(0.750 0.120 80);
+  --chart-5: oklch(0.600 0.200 30);
+
+  /* Sidebar stays dark but even deeper in dark mode */
+  --sidebar: oklch(0.095 0.012 38);
+  --sidebar-foreground: oklch(0.920 0.008 38);
+  --sidebar-primary: oklch(0.672 0.200 38.5);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.22 0.015 260);
-  --sidebar-accent-foreground: oklch(0.90 0.01 250);
-  --sidebar-border: oklch(0.25 0.015 260);
-  --sidebar-ring: oklch(0.62 0.17 258);
-  --success: oklch(0.65 0.17 155);
+  --sidebar-accent: oklch(0.168 0.015 38);
+  --sidebar-accent-foreground: oklch(0.900 0.010 38);
+  --sidebar-border: oklch(0.195 0.015 38);
+  --sidebar-ring: oklch(0.672 0.200 38.5);
+
+  --success: oklch(0.650 0.170 155);
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.80 0.15 80);
-  --warning-foreground: oklch(0.25 0.05 80);
+  --warning: oklch(0.800 0.150 80);
+  --warning-foreground: oklch(0.250 0.050 80);
 }
 
 @theme inline {
@@ -133,5 +152,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Premium card shadow system */
+  .card-shadow {
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 4px 12px oklch(0 0 0 / 0.04);
+  }
+  .card-shadow-md {
+    box-shadow: 0 4px 6px oklch(0 0 0 / 0.05), 0 10px 20px oklch(0 0 0 / 0.06);
   }
 }

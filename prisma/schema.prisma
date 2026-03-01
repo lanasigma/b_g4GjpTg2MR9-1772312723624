@@ -1,0 +1,78 @@
+// Learn more about Prisma schema:
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// LOCAL: provider = "sqlite", url = "file:./dev.db"
+// VERCEL: change provider to "postgresql" and set DATABASE_URL to your Postgres connection string
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Analysis status values: PENDING | PROCESSING | DONE | FAILED
+model Analysis {
+  id               String   @id @default(cuid())
+  name             String
+  industry         String   @default("")
+  stage            String   @default("")
+  geography        String   @default("")
+  // status: PENDING | PROCESSING | DONE | FAILED
+  status           String   @default("PENDING")
+  // Full structured JSON blob from LLM (companions, insights, risks, memo, etc.)
+  resultJson       Json?
+  // Denormalized from resultJson for easy querying/sorting
+  investmentSignal Int?
+  confidence       Int?
+  saved            Boolean  @default(false)
+  lastUpdated      DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  jobs         Job[]
+  sources      Source[]
+  chatMessages ChatMessage[]
+}
+
+// Job status values: PENDING | PROCESSING | DONE | FAILED
+model Job {
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  // status: PENDING | PROCESSING | DONE | FAILED
+  status     String   @default("PENDING")
+  // Human-readable step name matching the UI's analysisSteps array
+  step       String?
+  // 0–100
+  progress   Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Source material for analysis — kind: "pdf" | "website" | "manual"
+model Source {
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  // kind: "pdf" | "website" | "manual"
+  kind       String
+  // Extracted/provided text content
+  text       String?
+  // Blob URL (pdf), website URL, or null (manual)
+  url        String?
+  createdAt  DateTime @default(now())
+}
+
+// Persisted chat messages scoped to an analysis
+// role: "user" | "assistant"
+model ChatMessage {
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  // role: "user" | "assistant"
+  role       String
+  content    String
+  createdAt  DateTime @default(now())
+}

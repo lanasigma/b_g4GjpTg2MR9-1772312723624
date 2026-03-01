@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   BarChart3,
   FileText,
@@ -10,9 +11,10 @@ import {
   Briefcase,
   ShieldAlert,
 } from "lucide-react"
-import { demoMetrics, demoAnalyses, demoActivities } from "@/lib/demo-data"
+import { fetchAnalyses, type AnalysisSummary, type DashboardStats } from "@/lib/api"
 import { useApp } from "@/lib/app-context"
 import { Badge } from "@/components/ui/badge"
+import { formatDistanceToNow } from "date-fns"
 
 function MetricCard({
   label,
@@ -74,8 +76,45 @@ function getScoreColor(score: number) {
   return "text-muted-foreground"
 }
 
+function relativeTime(iso: string): string {
+  try {
+    return formatDistanceToNow(new Date(iso), { addSuffix: true })
+  } catch {
+    return iso
+  }
+}
+
+// Derive a simple activity feed from the analyses list
+function deriveActivities(analyses: AnalysisSummary[]) {
+  return analyses.slice(0, 5).map((a) => ({
+    action:
+      a.status === "Complete"
+        ? "Analysis completed"
+        : a.status === "In Progress"
+        ? "AI analysis in progress"
+        : "Startup uploaded",
+    target: a.name,
+    time: relativeTime(a.lastUpdated),
+  }))
+}
+
 export function DashboardPage() {
-  const { setCurrentPage } = useApp()
+  const { setCurrentPage, setCurrentAnalysisId } = useApp()
+  const [analyses, setAnalyses] = useState<AnalysisSummary[]>([])
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAnalyses({ limit: 6 })
+      .then((res) => {
+        setAnalyses(res.data)
+        setStats(res.stats)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const activities = deriveActivities(analyses)
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -91,35 +130,35 @@ export function DashboardPage() {
       <div className="grid grid-cols-5 gap-4">
         <MetricCard
           label="Startups Reviewed"
-          value={demoMetrics.startupsReviewed}
+          value={loading ? "—" : (stats?.total ?? 0)}
           icon={BarChart3}
           trend="+12%"
           trendUp={true}
         />
         <MetricCard
           label="Analyses Generated"
-          value={demoMetrics.analysesGenerated}
+          value={loading ? "—" : (stats?.complete ?? 0)}
           icon={FileText}
           trend="+8%"
           trendUp={true}
         />
         <MetricCard
           label="Avg Time Saved"
-          value={demoMetrics.avgTimeSaved}
+          value={loading ? "—" : (stats?.avgTimeSaved ?? "—")}
           icon={Clock}
           trend="+23%"
           trendUp={true}
         />
         <MetricCard
           label="Active Deals"
-          value={demoMetrics.activeDeals}
+          value={loading ? "—" : (stats?.active ?? 0)}
           icon={Briefcase}
           trend="-2%"
           trendUp={false}
         />
         <MetricCard
           label="Deals Flagged High Risk"
-          value={7}
+          value={loading ? "—" : (stats?.highRisk ?? 0)}
           icon={ShieldAlert}
           trend="+3"
           trendUp={false}
@@ -132,67 +171,89 @@ export function DashboardPage() {
         <div className="col-span-2 rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <h3 className="text-sm font-semibold text-card-foreground">Recent Analyses</h3>
-            <button className="text-xs font-medium text-primary hover:underline">
+            <button
+              onClick={() => setCurrentPage("deal-flow")}
+              className="text-xs font-medium text-primary hover:underline"
+            >
               View all
             </button>
           </div>
           <div className="overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                  <th className="px-5 py-3">Startup</th>
-                  <th className="px-5 py-3">Sector</th>
-                  <th className="px-5 py-3">Stage</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3 text-right">Investment Signal</th>
-                  <th className="px-5 py-3 text-right">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {demoAnalyses.map((item) => (
-                  <tr
-                    key={item.name}
-                    onClick={() => setCurrentPage("analysis")}
-                    className="cursor-pointer border-b border-border last:border-0 transition-colors hover:bg-muted/50"
-                  >
-                    <td className="px-5 py-3.5">
-                      <span className="text-sm font-medium text-card-foreground">
-                        {item.name}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                      {item.sector}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <Badge variant="outline" className="text-xs font-normal">
-                        {item.stage}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <span
-                        className={`text-sm font-semibold ${getScoreColor(
-                          item.aiScore
-                        )}`}
-                      >
-                        {item.aiScore > 0 ? item.aiScore : "--"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right text-sm text-muted-foreground">
-                      {item.lastUpdated}
-                    </td>
+            {loading ? (
+              <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+                Loading…
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                    <th className="px-5 py-3">Startup</th>
+                    <th className="px-5 py-3">Sector</th>
+                    <th className="px-5 py-3">Stage</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3 text-right">Investment Signal</th>
+                    <th className="px-5 py-3 text-right">Updated</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {analyses.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentAnalysisId(item.id)
+                        setCurrentPage("analysis")
+                      }}
+                      className="cursor-pointer border-b border-border last:border-0 transition-colors hover:bg-muted/50"
+                    >
+                      <td className="px-5 py-3.5">
+                        <span className="text-sm font-medium text-card-foreground">
+                          {item.name}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                        {item.sector}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {item.stage}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(
+                            item.status
+                          )}`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span
+                          className={`text-sm font-semibold ${getScoreColor(
+                            item.aiScore
+                          )}`}
+                        >
+                          {item.aiScore > 0 ? item.aiScore : "--"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-sm text-muted-foreground">
+                        {relativeTime(item.lastUpdated)}
+                      </td>
+                    </tr>
+                  ))}
+                  {analyses.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-5 py-8 text-center text-sm text-muted-foreground"
+                      >
+                        No analyses yet — upload your first startup to get started.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
@@ -202,7 +263,7 @@ export function DashboardPage() {
             <h3 className="text-sm font-semibold text-card-foreground">Activity</h3>
           </div>
           <div className="flex flex-col gap-0">
-            {demoActivities.map((activity, i) => (
+            {activities.map((activity, i) => (
               <div
                 key={i}
                 className="flex items-start gap-3 border-b border-border px-5 py-3.5 last:border-0"
@@ -211,15 +272,16 @@ export function DashboardPage() {
                   <TrendingUp className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-card-foreground">
-                    {activity.action}
-                  </p>
+                  <p className="text-sm text-card-foreground">{activity.action}</p>
                   <p className="text-xs text-muted-foreground">
                     {activity.target} &middot; {activity.time}
                   </p>
                 </div>
               </div>
             ))}
+            {!loading && activities.length === 0 && (
+              <p className="px-5 py-4 text-sm text-muted-foreground">No recent activity.</p>
+            )}
           </div>
         </div>
       </div>
