@@ -15,6 +15,52 @@ import { useApp } from "@/lib/app-context"
 import { streamChat, sendChatMessage, type ChatMessage } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+// Renders basic markdown (bold, italic, bullets) as JSX safely
+function MsgMarkdown({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\n+/)
+  return (
+    <div className="space-y-1.5">
+      {paragraphs.map((para, pi) => {
+        const lines = para.split("\n").filter(Boolean)
+        if (lines.length > 1 && lines.every((l) => /^[-•*]\s/.test(l.trim()))) {
+          return (
+            <ul key={pi} className="list-disc pl-4 space-y-0.5">
+              {lines.map((l, li) => (
+                <li key={li}><InlineMd text={l.replace(/^[-•*]\s/, "")} /></li>
+              ))}
+            </ul>
+          )
+        }
+        if (lines.length > 1 && lines.every((l) => /^\d+\.\s/.test(l.trim()))) {
+          return (
+            <ol key={pi} className="list-decimal pl-4 space-y-0.5">
+              {lines.map((l, li) => (
+                <li key={li}><InlineMd text={l.replace(/^\d+\.\s/, "")} /></li>
+              ))}
+            </ol>
+          )
+        }
+        return <p key={pi}><InlineMd text={para} /></p>
+      })}
+    </div>
+  )
+}
+
+function InlineMd({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**"))
+          return <strong key={i}>{part.slice(2, -2)}</strong>
+        if (part.startsWith("*") && part.endsWith("*"))
+          return <em key={i}>{part.slice(1, -1)}</em>
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
+
 const DEFAULT_PROMPTS = [
   "What are the biggest risks?",
   "Is this investment defensible?",
@@ -146,7 +192,9 @@ export function CopilotPanel() {
                   : "self-end bg-primary text-primary-foreground"
               )}
             >
-              {msg.content || (isTyping && i === messages.length - 1 ? null : "…")}
+              {msg.role === "assistant" && msg.content
+                ? <MsgMarkdown text={msg.content} />
+                : msg.content || (isTyping && i === messages.length - 1 ? null : "…")}
             </div>
           ))}
           {/* Typing indicator shown while waiting for first delta */}

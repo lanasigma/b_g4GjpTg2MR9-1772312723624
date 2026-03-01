@@ -52,14 +52,106 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   fetchAnalysis,
   sendChatMessage,
   toggleSaved,
   type AnalysisResult,
   type InvestmentDecision,
+  type StartupProfile,
 } from "@/lib/api"
 import { useApp } from "@/lib/app-context"
 import { MarketPositionChart } from "@/components/market-chart"
+
+// ─── Markdown renderer ────────────────────────────────────────────────────────
+function InlineMd({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**"))
+          return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>
+        if (part.startsWith("*") && part.endsWith("*"))
+          return <em key={i}>{part.slice(1, -1)}</em>
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
+
+function SimpleMarkdown({ text, className }: { text: string; className?: string }) {
+  const paragraphs = text.split(/\n\n+/)
+  return (
+    <div className={className}>
+      {paragraphs.map((para, pi) => {
+        const lines = para.split("\n").filter(Boolean)
+        if (lines.length > 1 && lines.every((l) => /^[-•*]\s/.test(l.trim()))) {
+          return (
+            <ul key={pi} className="list-disc pl-5 space-y-1 mb-3">
+              {lines.map((l, li) => (
+                <li key={li} className="text-sm leading-relaxed"><InlineMd text={l.replace(/^[-•*]\s/, "")} /></li>
+              ))}
+            </ul>
+          )
+        }
+        if (lines.length > 1 && lines.every((l) => /^\d+\.\s/.test(l.trim()))) {
+          return (
+            <ol key={pi} className="list-decimal pl-5 space-y-1 mb-3">
+              {lines.map((l, li) => (
+                <li key={li} className="text-sm leading-relaxed"><InlineMd text={l.replace(/^\d+\.\s/, "")} /></li>
+              ))}
+            </ol>
+          )
+        }
+        if (para.startsWith("# ")) return <h2 key={pi} className="text-base font-bold mt-4 mb-1">{para.slice(2)}</h2>
+        if (para.startsWith("## ")) return <h3 key={pi} className="text-sm font-semibold mt-3 mb-1">{para.slice(3)}</h3>
+        return <p key={pi} className="text-sm leading-relaxed mb-3"><InlineMd text={para.replace(/\n/g, " ")} /></p>
+      })}
+    </div>
+  )
+}
+
+// ─── PDF download for investment memo ────────────────────────────────────────
+function downloadMemoAsPDF(startup: StartupProfile, memo: string) {
+  const win = window.open("", "_blank", "width=900,height=700")
+  if (!win) return
+  const bodyHtml = memo
+    .split(/\n\n+/)
+    .map((para) => {
+      if (para.startsWith("# ")) return `<h2>${para.slice(2)}</h2>`
+      if (para.startsWith("## ")) return `<h3>${para.slice(3)}</h3>`
+      const html = para
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\n/g, "<br>")
+      return `<p>${html}</p>`
+    })
+    .join("")
+  win.document.write(`<!DOCTYPE html>
+<html><head>
+  <title>${startup.name} — Investment Memo</title>
+  <style>
+    body{font-family:Georgia,serif;max-width:750px;margin:48px auto;line-height:1.8;color:#111;font-size:14px}
+    h1{font-size:22px;font-weight:bold;margin:0 0 4px}
+    h2{font-size:16px;font-weight:bold;margin:24px 0 8px;color:#333}
+    h3{font-size:14px;font-weight:bold;margin:20px 0 6px;color:#444}
+    .meta{color:#666;font-size:12px;border-bottom:1px solid #ddd;padding-bottom:16px;margin-bottom:28px}
+    p{margin:0 0 14px}strong{font-weight:bold}em{font-style:italic}
+    @media print{body{margin:0;padding:32px}}
+  </style>
+</head><body>
+  <h1>${startup.name}</h1>
+  <div class="meta">Investment Memo &nbsp;·&nbsp; ${startup.industry} &nbsp;·&nbsp; ${startup.stage} &nbsp;·&nbsp; ${startup.geography}<br>AI Signal: ${startup.aiScore}/100 &nbsp;·&nbsp; Confidence: ${startup.confidenceLevel}%</div>
+  ${bodyHtml}
+  <script>window.onload=function(){window.print()}</script>
+</body></html>`)
+  win.document.close()
+}
 
 // ─── Brand colours for recharts (CSS vars don't work inside SVG) ──────────────
 const BRAND = "#E8521A"
@@ -504,6 +596,7 @@ export function AnalysisPage() {
   const [askQuery, setAskQuery] = useState("")
   const [askResponse, setAskResponse] = useState("")
   const [askLoading, setAskLoading] = useState(false)
+  const [memoOpen, setMemoOpen] = useState(false)
 
   useEffect(() => {
     if (!currentAnalysisId) { setLoading(false); return }
@@ -634,12 +727,11 @@ export function AnalysisPage() {
             <Bookmark className={`h-3.5 w-3.5 ${saved ? "fill-current" : ""}`} />
             {saved ? "Saved" : "Save"}
           </Button>
-          <Button
-            size="sm" className="gap-1.5"
-            onClick={() => document.getElementById("investment-memo")?.scrollIntoView({ behavior: "smooth" })}
-          >
-            <FileText className="h-3.5 w-3.5" />View Memo
-          </Button>
+          {analysis.investmentMemo && (
+            <Button size="sm" className="gap-1.5" onClick={() => setMemoOpen(true)}>
+              <FileText className="h-3.5 w-3.5" />Generate Memo
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1154,18 +1246,31 @@ export function AnalysisPage() {
         </>
       )}
 
-      {/* ── Investment Memo ────────────────────────────────────────────────── */}
-      {analysis.investmentMemo && (
-        <div id="investment-memo" className="rounded-xl border border-border bg-card p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-card-foreground">Investment Memo</h3>
+      {/* ── Investment Memo Dialog ──────────────────────────────────────────── */}
+      <Dialog open={memoOpen} onOpenChange={setMemoOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-row items-center justify-between shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              {startup.name} — Investment Memo
+            </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 mr-8"
+              onClick={() => downloadMemoAsPDF(startup, analysis.investmentMemo)}
+            >
+              <Download className="h-3.5 w-3.5" />Download PDF
+            </Button>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 pr-1">
+            <SimpleMarkdown
+              text={analysis.investmentMemo}
+              className="text-card-foreground"
+            />
           </div>
-          <div className="prose prose-sm max-w-none text-card-foreground leading-relaxed whitespace-pre-wrap">
-            {analysis.investmentMemo}
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Ask AI ─────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-5">
@@ -1199,11 +1304,11 @@ export function AnalysisPage() {
         </div>
         {askResponse && (
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <div className="mb-1.5 flex items-center gap-1.5">
+            <div className="mb-2 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary">AI Response</span>
             </div>
-            <p className="text-sm leading-relaxed text-card-foreground">{askResponse}</p>
+            <SimpleMarkdown text={askResponse} className="text-card-foreground" />
           </div>
         )}
       </div>

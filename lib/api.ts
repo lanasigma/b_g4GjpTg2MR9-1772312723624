@@ -303,21 +303,18 @@ export async function streamChat(
     // Each SSE event is "data: {...}\n\n"
     for (const line of raw.split("\n")) {
       if (!line.startsWith("data: ")) continue
+      let parsed: { delta?: string; done?: boolean; error?: string }
       try {
-        const parsed = JSON.parse(line.slice(6)) as {
-          delta?: string
-          done?: boolean
-          error?: string
-        }
-        if (parsed.error) throw new Error(parsed.error)
-        if (parsed.delta) {
-          fullText += parsed.delta
-          onDelta(parsed.delta)
-        }
-        if (parsed.done) return fullText
+        parsed = JSON.parse(line.slice(6))
       } catch {
-        // Skip malformed lines
+        continue // skip malformed JSON
       }
+      if (parsed.error) throw new Error(parsed.error)
+      if (parsed.delta) {
+        fullText += parsed.delta
+        onDelta(parsed.delta)
+      }
+      if (parsed.done) return fullText
     }
   }
 
