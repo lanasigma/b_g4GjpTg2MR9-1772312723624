@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       try {
         // Use Gemini streaming
         const model = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash-latest",
+          model: "gemini-2.5-flash-lite",
           systemInstruction: systemPrompt,
         })
 
